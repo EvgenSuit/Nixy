@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Nixy</string>
     <string name="title">Title</string>
+    <string name="saved">Saved</string>
 </resources>

@@ -4,6 +4,8 @@ import android.database.sqlite.SQLiteConstraintException
 import android.database.sqlite.SQLiteException
 import android.util.Log
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,12 +13,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -35,41 +39,36 @@ fun NoteBody(
     viewModel: NoteViewModel = viewModel(factory = NoteViewModel.Factory),
 ) {
     val note by viewModel.noteState.collectAsState()
-    val coroutineScope = rememberCoroutineScope()
+    val saved by viewModel.saved.collectAsState()
     var convertedNote = note.copy(id = id).toNote()
     Column {
-        ElevatedButton(
-            modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_small)),
-            onClick = { navController.navigateUp() }) {
-            Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = null)
+        Row (
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(dimensionResource(id = R.dimen.padding_small))
+        ) {
+            ElevatedButton(
+                onClick = { navController.navigateUp() }) {
+                Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = null)
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            if (saved) Text(text = stringResource(id = R.string.saved),
+                color = MaterialTheme.colorScheme.surfaceVariant)
         }
         OutlinedTextField(
-            label = {
-                    Text(stringResource(id = R.string.title))
-            },
+            textStyle = MaterialTheme.typography.titleMedium,
+            maxLines = 1,
             value = note.title,
             onValueChange = {
-                 convertedNote = convertedNote.copy(title = it)
-                handleNote(viewModel, coroutineScope, convertedNote)
+                convertedNote = convertedNote.copy(title = it)
+                viewModel.insertNote(convertedNote)
             },
             modifier = Modifier.fillMaxWidth())
         OutlinedTextField(
-            maxLines = 100,
             value = note.description, onValueChange = {
-             convertedNote = convertedNote.copy(description = it)
-            handleNote(viewModel, coroutineScope, convertedNote)
-        },
+                convertedNote = convertedNote.copy(description = it)
+                viewModel.insertNote(convertedNote)
+            },
+            textStyle = MaterialTheme.typography.titleSmall,
             modifier = Modifier.fillMaxSize())
     }
 }
-
-fun handleNote(viewModel: NoteViewModel, coroutineScope: CoroutineScope, note: Note) {
-    coroutineScope.launch {
-        try {
-            viewModel.insertNote(note)
-        }
-    catch (e: SQLiteConstraintException) {
-            viewModel.updateNote(note)
-        }
-}
-    }
